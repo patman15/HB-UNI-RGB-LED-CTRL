@@ -2,6 +2,7 @@
 // AskSin++
 // 2017-03-29 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 // 2018-08-03 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2021-08-20 patman15 Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
 #ifndef __RGBLEDXX_H__
@@ -651,33 +652,33 @@ class RGBLEDChannel : public Channel<HalType, DimmerList1, DimmerList3, EmptyLis
 
     void setColor(uint8_t val) {
       for (int i = 0; i < WSNUM_LEDS; i++) {
-        leds[i] = CHSV((val * 1275L) / 1000, (val <  200) ? 255 : 0, 255);
+        leds[i] = CRGBW(CHSV((val * 1275L) / 1000, (val <  200) ? 255 : 0, 255));
       }
     }
 
     void runProgram(uint8_t val) {
       switch (val) {
         case 0:
-          setColor(currentColor);
+          //setColor(currentColor); // no need to reset
           break;
         case 1:
-          RGBProgramRainbow(SLOW_PROGRAM_TIMER, brightness);
+          RGBProgramRainbow(SLOW_PROGRAM_TIMER, 255);
           break;
         case 2:
-          RGBProgramRainbow(NORMAL_PROGRAM_TIMER, brightness);
+          RGBProgramRainbow(NORMAL_PROGRAM_TIMER, 255);
           break;
         case 3:
-          RGBProgramRainbow(FAST_PROGRAM_TIMER, brightness);
+          RGBProgramRainbow(FAST_PROGRAM_TIMER, 255);
           break;
         case 4:
-          RGBProgramFire(brightness);
+          RGBProgramFire(/*brightness*/);
           break;
         case 5:
-          RGBProgramWaterfall(brightness);
+          RGBProgramWaterfall(currentColor);
           break;
-        case 6:
+        /*case 6:
           RGBProgramTVSimulation(brightness);
-          break;
+          break;*/
       }
     }
 
@@ -730,17 +731,19 @@ class RGBLEDDevice : public MultiChannelDevice<HalType, ChannelType, ChannelCoun
       FastLED.addLeds(&controler, leds, 1);
 #else
 #ifdef ENABLE_RGBW
-      FastLED.addLeds<WSLED_TYPE, WSLED_PIN, RGB>(ledsRGB, getRGBWsize(WSNUM_LEDS));
+      FastLED.addLeds<WSLED_TYPE, WSLED_PIN, RGB>(ledsRGB, getRGBWsize(WSNUM_LEDS)).setCorrection( TypicalLEDStrip );;
 #else
-      FastLED.addLeds<WSLED_TYPE, WSLED_PIN, WSCOLOR_ORDER>(leds, WSNUM_LEDS);
+      FastLED.addLeds<WSLED_TYPE, WSLED_PIN, WSCOLOR_ORDER>(leds, WSNUM_LEDS).setCorrection( TypicalLEDStrip );;
 #endif
 #endif
 
       DeviceType::channel(2).setColor(0);
     }
 
-    bool handleLED() {
+    void handleLED() {
+      //const uint32_t frames = micros();
       DeviceType::channel(3).runProgram(currentProgram);
+      //Serial.println(micros()-frames);
       FastLED.show();
     }
 
